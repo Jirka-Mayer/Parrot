@@ -77,7 +77,7 @@ namespace Parrot
         {
             SendMessage(
                 messageType,
-                Encoding.UTF8.GetBytes(payload)
+                Encoding.UTF8.GetBytes(payload ?? "")
             );
         }
 
@@ -150,6 +150,12 @@ namespace Parrot
         /// </summary>
         public void SendMessage(int messageType)
             => SendMessage(messageType, null);
+        
+        /// <summary>
+        /// Sends an empty message of a given type to the other side
+        /// </summary>
+        public void SendMessage(Enum messageType)
+            => SendMessage(Convert.ToInt32(messageType), null);
 
         /// <summary>
         /// Sends a message to the other side
