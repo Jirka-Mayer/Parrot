@@ -118,16 +118,47 @@ namespace Parrot
             
             return message;
         }
+
+        /// <summary>
+        /// Receives text message of an expected type
+        /// </summary>
+        /// <exception cref="UnexpectedMessageTypeException"></exception>
+        public string ReceiveTextMessageType(int expectedType)
+        {
+            return Encoding.UTF8.GetString(
+                ReceiveMessageType(expectedType)
+            );
+        }
+        
+        /// <summary>
+        /// Receives text message of an expected type
+        /// </summary>
+        /// <exception cref="UnexpectedMessageTypeException"></exception>
+        public string ReceiveTextMessageType(Enum expectedType)
+        {
+            return Encoding.UTF8.GetString(
+                ReceiveMessageType(expectedType)
+            );
+        }
         
         //////////////////////////
         // Binary communication //
         //////////////////////////
+        
+        /// <summary>
+        /// Sends an empty message of a given type to the other side
+        /// </summary>
+        public void SendMessage(int messageType)
+            => SendMessage(messageType, null);
 
         /// <summary>
-        /// Sends a message to the client
+        /// Sends a message to the other side
         /// </summary>
         public void SendMessage(int messageType, byte[] payload)
         {
+            if (payload == null)
+                payload = new byte[0];
+            
             byte[] sizeHeader = BitConverter.GetBytes(payload.Length);
             if (BitConverter.IsLittleEndian)
                 Array.Reverse(sizeHeader);
@@ -140,6 +171,30 @@ namespace Parrot
             socket.Send(typeHeader);
             socket.Send(payload);
         }
+
+        /// <summary>
+        /// Receives message of an expected type
+        /// </summary>
+        /// <exception cref="UnexpectedMessageTypeException"></exception>
+        public byte[] ReceiveMessageType(int expectedType)
+        {
+            byte[] message = ReceiveMessage(out int actualType);
+
+            if (actualType != expectedType)
+                throw new UnexpectedMessageTypeException(
+                    $"Received message of type {actualType} " +
+                    $"while expecting type {expectedType}."
+                );
+
+            return message;
+        }
+
+        /// <summary>
+        /// Receives message of an expected type
+        /// </summary>
+        /// <exception cref="UnexpectedMessageTypeException"></exception>
+        public byte[] ReceiveMessageType(Enum expectedType)
+            => ReceiveMessageType(Convert.ToInt32(expectedType));
 
         /// <summary>
         /// Receive a single message from the input stream
@@ -158,7 +213,7 @@ namespace Parrot
 
             return ReadBytes(size);
         }
-        
+
         /////////////////////////////////////////
         // Binary communication implementation //
         /////////////////////////////////////////
