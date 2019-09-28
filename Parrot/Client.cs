@@ -187,10 +187,14 @@ namespace Parrot
             byte[] message = ReceiveMessage(out int actualType);
 
             if (actualType != expectedType)
+            {
                 throw new UnexpectedMessageTypeException(
                     $"Received message of type {actualType} " +
-                    $"while expecting type {expectedType}."
+                    $"while expecting type {expectedType}.\n" +
+                    "ASCII decoded message content is:\n" +
+                    Encoding.ASCII.GetString(message)
                 );
+            }
 
             return message;
         }

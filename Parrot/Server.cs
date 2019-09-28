@@ -41,6 +41,11 @@ namespace Parrot
         /// </summary>
         private readonly Action<Client> clientHandler;
 
+        /// <summary>
+        /// Options for the server
+        /// </summary>
+        private readonly ServerOptions options;
+
         // flags indicating server state
         // (server can only be started and stopped once)
         private bool started;
@@ -57,11 +62,20 @@ namespace Parrot
         /// <param name="ipAddress"></param>
         /// <param name="port"></param>
         /// <param name="clientHandler"></param>
-        public Server(string ipAddress, int port, Action<Client> clientHandler)
+        /// <param name="options"></param>
+        public Server(
+            string ipAddress,
+            int port,
+            Action<Client> clientHandler,
+            ServerOptions options = null
+        )
         {
+            options = options ?? new ServerOptions();
+            
             this.ipAddress = ipAddress;
             this.port = port;
             this.clientHandler = clientHandler;
+            this.options = options;
         }
 
         /// <summary>
@@ -121,21 +135,31 @@ namespace Parrot
                         throw;
                     }
 
-                    // start handler in a new thread
-                    new Thread(() => {
+                    // start handler (in a new thread)
+                    if (options.multiThreading)
+                    {
+                        new Thread(() => {
+                            using (var client = new Client(socket))
+                                RunClientHandler(client);
+                        }).Start();
+                    }
+                    else
+                    {
                         using (var client = new Client(socket))
                             RunClientHandler(client);
-                    }).Start();
+                    }
                 }
             }
             catch (Exception e)
             {
                 // log any unhandled exceptions so that we know about them
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(
                     "Exception occured inside Parrot server " +
                     "client accepting thread:"
                 );
                 Console.WriteLine(e);
+                Console.ResetColor();
             }
         }
 
@@ -152,11 +176,13 @@ namespace Parrot
             catch (Exception e)
             {
                 // log any unhandled exceptions so that we know about them
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(
                     "Exception occured inside Parrot server " +
                     "client handler method:"
                 );
                 Console.WriteLine(e);
+                Console.ResetColor();
             }
         }
 
